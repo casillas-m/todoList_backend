@@ -31,8 +31,70 @@ const createTask = async (req, res) => {
     }
 }
 
+const getTasks = async (req, res) => {
+    //A function that receives a request with the idUser and returns all the tasks of that user
+    const { idUser } = req.query;
+    if(!idUser) return res.status(400).json({ message: 'missing required info' });
+    try {
+        let tasks = await taskSchema.find({ idUser: idUser });
+        if(tasks) {
+            return res.status(200).send({ tasks });
+        }
+        throw "Could not get tasks!";
+    } catch (error) {
+        return res.status(500).send({ message: error.toString() });
+    }
+}
+
+const editTask = async (req, res) => {
+    //A function that receives a request with the id of the task to edit and the new values and updates the task
+    const { idTask, title, text, timeEstimate, starTime, endTime, imageURL } = req.body;
+    if(!idTask) return res.status(400).json({ message: 'missing required info' });
+    try {
+        let task = await taskSchema.findOne({ _id: idTask });
+        if(task) {
+            task.title = title ? title : task.title;
+            task.text = text ? text : task.text;
+            task.timeEstimate = timeEstimate ? timeEstimate : task.timeEstimate;
+            task.starTime = starTime ? starTime : task.starTime;
+            task.endTime = endTime ? endTime : task.endTime;
+            task.imageURL = imageURL ? imageURL : task.imageURL;
+            let result = await task.save();
+            if(result) {
+                return res.status(200).send({message: 'Task edited' });
+            } else {
+                throw "Could not edit task!";
+            }
+        } else {
+            throw "Task not found!";
+        }
+    } catch (error) {
+        return res.status(500).send({ message: error.toString() });
+    }
+}
+
+//Falta que se recalculen las prioridades
+const deleteTask = async (req, res) => {
+    //A function that receives a request with the id of the task to delete and deletes it
+    const { idTask } = req.query;
+    if(!idTask) return res.status(400).json({ message: 'missing required info' });
+    try {
+        let result = await taskSchema.deleteOne({ _id: idTask });
+        if(result) {
+            return res.status(200).send({message: 'Task deleted' });
+        } else {
+            throw "Could not delete task!";
+        }
+    } catch (error) {
+        return res.status(500).send({ message: error.toString() });
+    }
+}
+
+//Falta crear función para cambiar y actualizar las prioridades
 
 module.exports = {
     createTask,
+    getTasks,
+    editTask,
+    deleteTask
 }
-

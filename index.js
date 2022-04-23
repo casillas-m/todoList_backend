@@ -11,5 +11,6 @@ app.use(express.json());
 
 app.get('/', (req, res) => {res.json({message: 'todo list API'})});
 app.use('/api/tasks', require('./src/routes/task.route'));
+app.use('/api/users', require('./src/routes/user.route'));
 
 app.listen(port, () => console.log(`Listening on port ${port}`));
