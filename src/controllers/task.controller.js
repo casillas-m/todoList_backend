@@ -6,8 +6,8 @@ const createTask = async (req, res) => {
     const { title, text, timeEstimate, starTime, endTime, imageURL } = req.body;
     if(!title) return res.status(400).json({ message: 'missing required info' });
     try {
-        let lastTask = await taskSchema.findOne({ idUser: idUser }, {}, { sort: { 'createdAt': -1 } });
-        let priority = lastTask ? lastTask.priority + 1 : 1;
+        const lowerPriorityTask = await taskSchema.findOne({ idUser: idUser }, {}, { sort: { 'priority': -1 } });
+        let priority = lowerPriorityTask ? lowerPriorityTask.priority + 1 : 1;
         const newTask = new taskSchema({
             idUser,
             priority,
@@ -76,7 +76,6 @@ const editTask = async (req, res) => {
     }
 }
 
-//Falta que se recalculen las prioridades
 const deleteTask = async (req, res) => {
     //A function that receives a request with the id of the task to delete and deletes it
     const idUser = req.mail;
@@ -86,8 +85,18 @@ const deleteTask = async (req, res) => {
         let task = await taskSchema.findOne({ _id: idTask });
         if(task) {
             if(task.idUser != idUser) return res.status(401).send({ message: 'Unauthorized' });
+            const taskPriority = task.priority;
             let result = await task.remove();
             if(result) {
+                let tasks = await taskSchema.find({ idUser: idUser },{}, { sort: { 'priority': 1 } });
+                if(tasks) {
+                    for(let i = taskPriority - 1; i < tasks.length; i++){
+                        tasks[i].priority = i + 1;
+                        await tasks[i].save();
+                    }
+                } else {
+                    throw "Could not get tasks!";
+                }
                 return res.status(200).send({message: 'Task deleted' });
             } else {
                 throw "Could not delete task!";

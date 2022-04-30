@@ -87,8 +87,8 @@ const login = async (req, res) => {
         if(user) {
             let result = await bcryptjs.compare(password, user.password);
             if(result) {
-                let token = jwt.sign({ mail }, process.env.SECRET_KEY);
-                return res.status(200).send({ token });
+                let authorization = jwt.sign({ mail }, process.env.SECRET_KEY);
+                return res.status(200).send({ authorization });
             } else {
                 throw "Wrong password!";
             }
