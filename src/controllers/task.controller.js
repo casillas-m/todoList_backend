@@ -37,7 +37,7 @@ const getTasks = async (req, res) => {
     const idUser = req.mail;
     if(!idUser) return res.status(400).json({ message: 'missing required info' });
     try {
-        let tasks = await taskSchema.find({ idUser: idUser });
+        let tasks = await taskSchema.find({ idUser: idUser }, {}, { sort: { 'priority': 1 }});
         if(tasks) {
             return res.status(200).send({ tasks });
         }
@@ -109,11 +109,49 @@ const deleteTask = async (req, res) => {
     }
 }
 
-//Falta crear función para cambiar y actualizar las prioridades
+const changePriority = async (req, res) => {
+    const idUser = req.mail;
+    const { idTask, type } = req.body;
+    if(!idTask || !type) return res.status(400).json({ message: 'missing required info' });
+    try {
+        let task = await taskSchema.findOne({ _id: idTask });
+        if(task) {
+            if(task.idUser != idUser) return res.status(401).send({ message: 'Unauthorized' });
+            let oldPriority = task.priority;
+            let newPriority;
+            if(type == 'up') {
+                newPriority = oldPriority - 1;
+            } else if(type == 'down') {
+                newPriority = oldPriority + 1;
+            } else {
+                throw "Invalid type!";
+            }
+            let otherTask = await taskSchema.findOne({ idUser, priority: newPriority });
+            if(otherTask) {
+                task.priority = newPriority;
+                otherTask.priority = oldPriority;
+                let result = await task.save();
+                let resultOther = await otherTask.save();
+                if(result && resultOther) {
+                    return res.status(200).send({message: 'Task priority changed' });
+                } else {
+                    throw "Could not change task priority!";
+                }
+            } else {
+                throw "Could not find other task!";
+            }
+        } else {
+            throw "Task not found!";
+        }
+    } catch (error) {
+        return res.status(500).send({ message: error.toString() });
+    }
+}
 
 module.exports = {
     createTask,
     getTasks,
     editTask,
-    deleteTask
+    deleteTask,
+    changePriority,
 }
