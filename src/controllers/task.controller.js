@@ -2,8 +2,9 @@ const taskSchema = require('../models/task.model');
 
 const createTask = async (req, res) => {
     //A function that receives a request with the parameters needed to create a new task and stores it in the database
-    const { idUser, title, text, timeEstimate, starTime, endTime, imageURL } = req.body;
-    if(!idUser || !title) return res.status(400).json({ message: 'missing required info' });
+    const idUser = req.mail;
+    const { title, text, timeEstimate, starTime, endTime, imageURL } = req.body;
+    if(!title) return res.status(400).json({ message: 'missing required info' });
     try {
         let lastTask = await taskSchema.findOne({ idUser: idUser }, {}, { sort: { 'createdAt': -1 } });
         let priority = lastTask ? lastTask.priority + 1 : 1;
@@ -33,7 +34,7 @@ const createTask = async (req, res) => {
 
 const getTasks = async (req, res) => {
     //A function that receives a request with the idUser and returns all the tasks of that user
-    const { idUser } = req.query;
+    const idUser = req.mail;
     if(!idUser) return res.status(400).json({ message: 'missing required info' });
     try {
         let tasks = await taskSchema.find({ idUser: idUser });
@@ -48,11 +49,13 @@ const getTasks = async (req, res) => {
 
 const editTask = async (req, res) => {
     //A function that receives a request with the id of the task to edit and the new values and updates the task
+    const idUser = req.mail;
     const { idTask, title, text, timeEstimate, starTime, endTime, imageURL } = req.body;
     if(!idTask) return res.status(400).json({ message: 'missing required info' });
     try {
         let task = await taskSchema.findOne({ _id: idTask });
         if(task) {
+            if(task.idUser != idUser) return res.status(401).send({ message: 'Unauthorized' });
             task.title = title ? title : task.title;
             task.text = text ? text : task.text;
             task.timeEstimate = timeEstimate ? timeEstimate : task.timeEstimate;
@@ -76,14 +79,21 @@ const editTask = async (req, res) => {
 //Falta que se recalculen las prioridades
 const deleteTask = async (req, res) => {
     //A function that receives a request with the id of the task to delete and deletes it
+    const idUser = req.mail;
     const { idTask } = req.query;
     if(!idTask) return res.status(400).json({ message: 'missing required info' });
     try {
-        let result = await taskSchema.deleteOne({ _id: idTask });
-        if(result) {
-            return res.status(200).send({message: 'Task deleted' });
+        let task = await taskSchema.findOne({ _id: idTask });
+        if(task) {
+            if(task.idUser != idUser) return res.status(401).send({ message: 'Unauthorized' });
+            let result = await task.remove();
+            if(result) {
+                return res.status(200).send({message: 'Task deleted' });
+            } else {
+                throw "Could not delete task!";
+            }
         } else {
-            throw "Could not delete task!";
+            throw "Task not found!";
         }
     } catch (error) {
         return res.status(500).send({ message: error.toString() });

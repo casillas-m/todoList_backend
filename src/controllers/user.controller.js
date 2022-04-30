@@ -6,6 +6,8 @@ const createUser = async (req, res) => {
     const { name, password, mail} = req.body;
     if(!name || !password ||!mail) return res.status(400).json({ message: 'missing required info' });
     try {
+        const existingUser = await userSchema.findOne({ mail });
+        if(existingUser) return res.status(400).json({ message: 'mail already exists' });
         const newUser = new userSchema({
             name,
             password: bcryptjs.hashSync(password, 10),
@@ -24,12 +26,12 @@ const createUser = async (req, res) => {
 
 const getUser = async (req, res) => {
     //A function that returns a user name and id by its mail
-    const { mail } = req.query;
+    const { mail } = req;
     if(!mail) return res.status(400).json({ message: 'missing required info' });
     try {
         let result = await userSchema.findOne({ mail });
         if(result) {
-            return res.status(200).send({ name: result.name, id: result._id });
+            return res.status(200).send({ name: result.name});
         } else {
             throw "Could not find user!";
         }
@@ -40,8 +42,10 @@ const getUser = async (req, res) => {
 
 const editUser = async (req, res) => {
     //A function that edits a user name or password by its mail
-    const { mail, name, password } = req.body;
-    if(!mail) return res.status(400).json({ message: 'missing required info' });
+    const { mail } = req;
+    const { name, password } = req.body;
+    const token = req.headers.authorization;
+    if(!token) return res.status(400).json({ message: 'missing required info' });
     try {
         let result = await userSchema.findOne({ mail });
         if(result) {
@@ -59,7 +63,7 @@ const editUser = async (req, res) => {
 
 const deleteUser = async (req, res) => {
     //A function that deletes a user by its mail
-    const { mail } = req.query;
+    const { mail } = req;
     if(!mail) return res.status(400).json({ message: 'missing required info' });
     try {
         let result = await userSchema.findOne({ mail });
@@ -83,7 +87,7 @@ const login = async (req, res) => {
         if(user) {
             let result = await bcryptjs.compare(password, user.password);
             if(result) {
-                let token = jwt.sign({ idUser: user._id }, process.env.SECRET_KEY);
+                let token = jwt.sign({ mail }, process.env.SECRET_KEY);
                 return res.status(200).send({ token });
             } else {
                 throw "Wrong password!";
