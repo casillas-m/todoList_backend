@@ -1,4 +1,6 @@
 const userSchema = require('../models/user.model');
+const bcryptjs = require("bcryptjs");
+const jwt = require("jsonwebtoken");
 
 const createUser = async (req, res) => {
     const { name, password, mail} = req.body;
@@ -6,8 +8,8 @@ const createUser = async (req, res) => {
     try {
         const newUser = new userSchema({
             name,
-            password,
-            mail
+            password: bcryptjs.hashSync(password, 10),
+            mail: mail.toLowerCase()
         });
         let result = await newUser.save();
         if(result) {
@@ -72,9 +74,33 @@ const deleteUser = async (req, res) => {
     }
 }
 
+const login = async (req, res) => {
+    //A function that receives a request with the email and password and returns the token
+    const { mail, password } = req.body;
+    if(!mail || !password) return res.status(400).json({ message: 'missing required info' });
+    try {
+        let user = await userSchema.findOne({ mail });
+        if(user) {
+            let result = await bcryptjs.compare(password, user.password);
+            if(result) {
+                let token = jwt.sign({ idUser: user._id }, process.env.SECRET_KEY);
+                return res.status(200).send({ token });
+            } else {
+                throw "Wrong password!";
+            }
+        } else {
+            throw "User not found!";
+        }
+    } catch (error) {
+        return res.status(500).send({ message: error.toString() });
+    }
+}
+
+
 module.exports = {
     createUser,
     getUser,
     editUser,
     deleteUser,
+    login,
 }
