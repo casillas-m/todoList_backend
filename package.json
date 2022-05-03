@@ -1,13 +1,23 @@
 {
   "name": "todolist_backend",
   "version": "1.0.0",
-  "description": "",
+  "description": "Cybersecurity diplomate. Module 2 project backend.",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node ."
   },
-  "author": "",
-  "license": "ISC",
+  "author": "casillas-m",
+  "contributors": [
+    "MarioGalvez12",
+    "Rickster5555",
+    "danielrh6"
+  ],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/casillas-m/todoList_backend.git"
+  },
   "dependencies": {
     "bcryptjs": "^2.4.3",
     "cors": "^2.8.5",
