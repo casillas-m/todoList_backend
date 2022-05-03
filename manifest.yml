@@ -1,8 +1,6 @@
 ---
 applications:
   - name: todo-api-team2
-    buildpacks:
-      - sdk-for-nodejs
     path: .
     command: npm run start
     instances: 1
