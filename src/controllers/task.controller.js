@@ -63,7 +63,7 @@ const editTask = async (req, res) => {
             task.starTime = starTime ? starTime : task.starTime;
             task.endTime = endTime ? endTime : task.endTime;
             task.imageURL = imageURL ? imageURL : task.imageURL;
-            task.completed = completed ? completed : task.completed;
+            task.completed = completed !== undefined ? completed : task.completed;
             let result = await task.save();
             if (result) {
                 return res.status(200).send({ message: 'Task edited' });
